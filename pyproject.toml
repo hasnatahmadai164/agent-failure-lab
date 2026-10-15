@@ -1,0 +1,87 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agent-failure-lab"
+dynamic = ["version"]
+description = "A catalogue of LLM agent failures with deterministic reproductions and tested guards."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Hasnat Ahmad" }]
+keywords = ["llm", "agents", "reliability", "testing", "guardrails"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Software Development :: Testing",
+  "Typing :: Typed",
+]
+dependencies = [
+  "typer>=0.12,<2",
+  "rich>=13.7,<15",
+]
+
+[project.optional-dependencies]
+live = ["openai>=1.40,<3"]
+langgraph = ["langgraph>=0.2,<2"]
+dev = [
+  "pytest>=8,<10",
+  "ruff>=0.6,<1",
+  "mypy>=1.11,<2",
+  "build>=1.2,<2",
+  "twine>=7,<8",
+]
+
+[project.scripts]
+aflab = "agent_failure_lab.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/hasnatahmadai164/agent-failure-lab"
+Repository = "https://github.com/hasnatahmadai164/agent-failure-lab"
+Issues = "https://github.com/hasnatahmadai164/agent-failure-lab/issues"
+Changelog = "https://github.com/hasnatahmadai164/agent-failure-lab/blob/main/CHANGELOG.md"
+
+[tool.hatch.version]
+path = "src/agent_failure_lab/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agent_failure_lab"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "src",
+  "tests",
+  "docs",
+  "README.md",
+  "LICENSE",
+  "CHANGELOG.md",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["B", "C4", "E", "F", "I", "N", "PT", "RUF", "SIM", "T20", "UP", "W"]
+
+[tool.mypy]
+strict = true
+python_version = "3.10"
+files = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --import-mode=importlib"
+markers = [
+  "live: needs network access and OPENAI_API_KEY, runs only when RUN_LIVE=1",
+]
