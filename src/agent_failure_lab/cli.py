@@ -47,8 +47,8 @@ def build_app(registry: ScenarioRegistry) -> typer.Typer:
         table.add_column("Slug", no_wrap=True)
         table.add_column("Category", no_wrap=True)
         table.add_column("Summary")
-        for info in scenarios:
-            table.add_row(info.slug, info.category, info.summary)
+        for scenario in scenarios:
+            table.add_row(scenario.slug, scenario.category, scenario.summary)
         console.print(table)
 
     return app

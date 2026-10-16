@@ -1,8 +1,11 @@
+from collections.abc import Callable
+
 from typer.testing import CliRunner
 
 from agent_failure_lab import __version__
 from agent_failure_lab.cli import build_app
-from agent_failure_lab.registry import ScenarioInfo, ScenarioRegistry
+from agent_failure_lab.registry import ScenarioRegistry
+from agent_failure_lab.scenario import ScenarioDefinition
 
 runner = CliRunner()
 
@@ -28,16 +31,11 @@ def test_list_reports_an_empty_catalogue() -> None:
     assert "No failures are registered yet." in result.output
 
 
-def test_list_shows_slug_category_and_summary() -> None:
+def test_list_shows_slug_category_and_summary(
+    make_scenario: Callable[..., ScenarioDefinition],
+) -> None:
     registry = ScenarioRegistry()
-    registry.register(
-        ScenarioInfo(
-            slug="duplicate-side-effect",
-            title="Duplicate side effect",
-            category="side-effects",
-            summary="Retry charges twice",
-        )
-    )
+    registry.register(make_scenario("duplicate-side-effect"))
 
     result = runner.invoke(build_app(registry), ["list"])
 
