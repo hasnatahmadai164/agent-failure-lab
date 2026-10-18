@@ -1,10 +1,10 @@
 import os
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 import pytest
 
 from agent_failure_lab.scenario import Outcome, ScenarioDefinition, Variant
-from agent_failure_lab.sim import ManualClock, Trace
+from agent_failure_lab.sim import ManualClock, Message, RunState, ToolSpec, Trace, Usage
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
@@ -37,5 +37,26 @@ def make_scenario() -> Callable[..., ScenarioDefinition]:
             broken=lambda: outcome(Variant.BROKEN, broken_fails),
             fixed=lambda: outcome(Variant.FIXED, fixed_fails),
         )
+
+    return factory
+
+
+@pytest.fixture
+def make_run() -> Callable[..., RunState]:
+    """Build a RunState so a guard's hooks can be called without running an agent."""
+
+    def factory(
+        *,
+        specs: Sequence[ToolSpec] = (),
+        history: Sequence[Message] = (),
+        usage: Usage | None = None,
+        step: int = 1,
+    ) -> RunState:
+        clock = ManualClock()
+        state = RunState(clock=clock, trace=Trace(clock), tool_specs=specs, history=history)
+        state.step = step
+        if usage is not None:
+            state.usage = usage
+        return state
 
     return factory
