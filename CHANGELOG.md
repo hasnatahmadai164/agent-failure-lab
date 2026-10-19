@@ -14,4 +14,9 @@ All notable changes to this project are recorded here. The format follows
   an injectable clock, a trace recorder, and an agent loop with five guard hook points.
 - Scenario protocol, outcome model, registry with slug validation, and a runner that checks
   the broken and fixed variants against each other.
+- Guards: `IdempotencyKeys`, `IdempotencyStore`, `LoopDetector`, `StepBudget`,
+  `ToolOutputQuarantine`, `CapabilityGate`, `ArgumentValidator`, `ContextBudget` and
+  `CostBudget`, documented in `docs/guards.md`.
+- Failures: `duplicate-side-effect`, `infinite-tool-loop`, `tool-output-injection`,
+  `hallucinated-tool-arguments`, `silent-context-truncation` and `runaway-cost`.
 - CI for lint, type check, tests (Python 3.10 to 3.13) and the build check.
