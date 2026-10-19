@@ -101,3 +101,53 @@ Each entry has the context, the decision, the alternatives I rejected, and the c
 **Alternatives rejected.** Registering on import breaks the no side effects rule and makes test order matter. Loading folders by name with importlib hides what the catalogue contains.
 
 **Consequences.** Adding a failure means writing its package and adding one line to `builtin_scenarios()`. `aflab new` will do both. `ScenarioInfo` is gone.
+
+## D-011: A fix that needs the other side ships both halves
+
+**Context.** Idempotency only works if the caller sends a stable key and the system doing the work checks it.
+
+**Decision.** `IdempotencyKeys` is the guard that attaches the key. `IdempotencyStore` is used inside the tool. The scenario and `docs/guards.md` use both.
+
+**Alternatives rejected.** Shipping only the guard would look like a fix and change nothing.
+
+**Consequences.** Users must change their tool as well as their loop. The docs say so.
+
+## D-012: Each failure has a `world.py` shared by both variants
+
+**Context.** The broken and fixed variants must differ only in the fix, or the comparison means nothing.
+
+**Decision.** `world.py` holds the fake systems, tools, scripted model and the outcome measurement. `broken.py` and `fixed.py` only choose guards. `failure_observed` always measures an effect in the fake world (charges made, emails delivered, tokens spent), never whether a guard fired.
+
+**Alternatives rejected.** Two separate copies of each scenario would drift. Deciding failure by looking for a guard intervention would make the fixed variant pass by definition.
+
+**Consequences.** A contributor reads one file for the setup and one line of difference per variant.
+
+## D-013: The scripted model obeys the injection in both variants
+
+**Context.** A scripted model cannot show that wrapping text makes a real model ignore hidden instructions, and claiming it would be dishonest.
+
+**Decision.** In `tool-output-injection` the model follows the hidden instruction either way. `ToolOutputQuarantine` only labels the output. `CapabilityGate` does the real work by blocking the call.
+
+**Alternatives rejected.** Making the model obey only when the output is unwrapped. That would present an unproven defence as working.
+
+**Consequences.** The README and guard docs call the quarantine advisory and the gate the dependable control.
+
+## D-014: Argument validation uses a small JSON Schema subset
+
+**Context.** `ArgumentValidator` needs schema checks, and the core install should stay small.
+
+**Decision.** Implement required, type, enum, pattern, string length, number bounds and additionalProperties false. Ignore other keywords and say so in the docstring.
+
+**Alternatives rejected.** A `jsonschema` dependency would be more complete but is a larger install for a core that does not need it.
+
+**Consequences.** Complex schemas are only partly checked. The docs list what is covered.
+
+## D-015: Budgets check before the call and say what they did
+
+**Context.** Context and cost limits fail quietly if they trim or overrun without telling anyone.
+
+**Decision.** `ContextBudget` only changes the request, pins system messages, adds a visible note, and stops the run if pinned or newest messages do not fit. `CostBudget` checks before each call, using the known prompt plus a reserve for the reply. Prices are supplied by the caller, and the scenario's rates are labelled illustrative.
+
+**Alternatives rejected.** Checking after the call overspends by one call. Summarising old messages adds a second model and its own error cases.
+
+**Consequences.** A reply longer than the reserve can pass the ceiling slightly. The docs state it.
