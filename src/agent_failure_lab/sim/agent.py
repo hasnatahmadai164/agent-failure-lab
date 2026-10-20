@@ -9,6 +9,7 @@ from agent_failure_lab.sim.clock import Clock
 from agent_failure_lab.sim.hooks import Block, Guard, RunState, Stop
 from agent_failure_lab.sim.llm import LanguageModel, ModelTurn, Usage
 from agent_failure_lab.sim.messages import Message, ToolCall, tool_message
+from agent_failure_lab.sim.state import BatchScope
 from agent_failure_lab.sim.tools import ToolRegistry, ToolResult
 from agent_failure_lab.sim.trace import EventKind, Trace
 
@@ -45,6 +46,9 @@ class Agent:
     One step is one model call plus the tool calls it asked for. Guards hook into the loop
     at five points; with no guards the loop does exactly what the model says. Errors raised by
     tools are reported to the model as error results. Any other exception ends the run.
+
+    With a batch scope, the tool calls of a turn that asks for more than one run as a single
+    concurrent batch, so calls that share state can overwrite each other.
     """
 
     def __init__(
@@ -57,6 +61,7 @@ class Agent:
         max_steps: int = 20,
         tool_timeout: float | None = None,
         trace: Trace | None = None,
+        batch: BatchScope | None = None,
     ) -> None:
         if max_steps < 1:
             raise ValueError("max_steps must be at least 1")
@@ -67,6 +72,7 @@ class Agent:
         self._max_steps = max_steps
         self._tool_timeout = tool_timeout
         self._trace = trace if trace is not None else Trace(clock)
+        self._batch = batch
 
     @property
     def trace(self) -> Trace:
@@ -114,11 +120,24 @@ class Agent:
         state.append(checked.message)
         if not checked.message.tool_calls:
             return _Finish(StopReason.FINAL_ANSWER, answer=checked.message.content)
-        for call in checked.message.tool_calls:
-            finish = self._run_tool_call(state, call)
-            if finish is not None:
-                return finish
+        finish = self._run_tool_calls(state, checked.message.tool_calls)
+        if finish is not None:
+            return finish
         return self._step_end(state)
+
+    def _run_tool_calls(self, state: RunState, calls: Sequence[ToolCall]) -> _Finish | None:
+        batch = self._batch if len(calls) > 1 else None
+        if batch is not None:
+            batch.begin()
+        try:
+            for call in calls:
+                finish = self._run_tool_call(state, call)
+                if finish is not None:
+                    return finish
+        finally:
+            if batch is not None:
+                batch.end()
+        return None
 
     def _run_tool_call(self, state: RunState, call: ToolCall) -> _Finish | None:
         state.trace.record(

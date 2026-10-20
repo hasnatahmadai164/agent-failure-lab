@@ -12,6 +12,7 @@ from agent_failure_lab.sim.messages import (
     tool_message,
     user_message,
 )
+from agent_failure_lab.sim.state import BatchScope, SharedStore
 from agent_failure_lab.sim.tools import (
     Delay,
     Fail,
@@ -24,6 +25,7 @@ from agent_failure_lab.sim.trace import EventKind, Trace, TraceEvent
 
 __all__ = [
     "Agent",
+    "BatchScope",
     "Block",
     "Clock",
     "Delay",
@@ -39,6 +41,7 @@ __all__ = [
     "RunResult",
     "RunState",
     "ScriptedLLM",
+    "SharedStore",
     "Stop",
     "StopReason",
     "SystemClock",
