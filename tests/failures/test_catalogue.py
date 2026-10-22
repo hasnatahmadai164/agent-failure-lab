@@ -32,6 +32,12 @@ def test_the_catalogue_lists_the_failures_in_the_order_of_the_brief() -> None:
         "hallucinated-tool-arguments",
         "silent-context-truncation",
         "runaway-cost",
+        "resume-replays-completed-steps",
+        "tool-timeout-hang",
+        "parallel-tool-race",
+        "ambiguous-tool-selection",
+        "false-success-claim",
+        "memory-poisoning",
     ]
 
 
