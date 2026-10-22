@@ -95,3 +95,58 @@ guards = [quarantine, gate]
 **Wire it.** `CostBudget(max_cost=..., pricing=Pricing(...), completion_reserve=...)`, or `max_tokens`, or both. It checks before each model call whether the call would pass the ceiling.
 
 **Trade-offs.** The reply size is unknown beforehand, so the reserve is an assumption. A longer reply can overshoot by the difference. Prices belong in configuration.
+
+## StepJournal and Journal
+
+**Protects against.** A restarted agent repeating work that already finished (`resume-replays-completed-steps`).
+
+**Wire it.** Create one `Journal` that outlives the process, and give each run a new `StepJournal` that uses it. List `StepJournal` last, so a block by another guard is never recorded as completed work.
+
+```python
+journal = Journal()
+guards = [StepJournal(journal)]
+```
+
+**Trade-offs.** The journal here is in memory. A real one must be durable, or a crash loses it. Steps are matched by tool, arguments and how many times the same call has been made, so a plan that changes after a restart is only partly recognised. A step that crashed after its effect but before it was recorded runs again, so pair it with idempotency keys. Only side-effecting tools are journaled.
+
+## Deadline
+
+**Protects against.** A tool that never answers and holds up the whole run (`tool-timeout-hang`).
+
+**Wire it.** `Deadline(per_call=5, total=20)`. The guard sets the run's tool timeout before each call. A call that reaches the limit is cancelled and the model is told to carry on with the results it has and to say what is missing. The limit shrinks as the total deadline nears, and nothing new starts after it.
+
+**Trade-offs.** Cancelling a call does not always stop the work on the other side, so a cancelled write may still have happened. A partial answer is only right when the task allows one. Limits that are too tight fail healthy calls.
+
+## ConflictSerializer
+
+**Protects against.** Two tool calls in one turn overwriting each other's update (`parallel-tool-race`).
+
+**Wire it.** `ConflictSerializer(["ticket_id"])`. Only the first side-effecting call per resource runs in a turn. Later ones are held back with a message asking the model to repeat them in its next step. Reads are never held back.
+
+**Trade-offs.** It costs an extra model step and relies on the model repeating the call. The argument names decide what counts as the same resource, so a wrong choice misses conflicts. An atomic operation, a version check or a transaction in the tool is the better fix when you can make it.
+
+The simulation models concurrency with `Agent(batch=store)` and `SharedStore`: when a turn has several tool calls, they run as one batch in which every read sees the data as it was when the batch began, and writes are applied together at the end.
+
+## ToolDescriptionLinter
+
+**Protects against.** Two tools whose descriptions are too alike to tell apart (`ambiguous-tool-selection`).
+
+**Wire it.** `ToolDescriptionLinter()` checks the tool descriptions once, before the first model call, and stops the run if two overlap too much or one is too short. `lint_descriptions(specs)` does the same check without a run, which suits a test suite. Use `strict=False` to log findings without stopping.
+
+**Trade-offs.** Word overlap is a blunt measure. Treat a finding as a prompt to review the descriptions. Better descriptions reduce wrong choices but do not remove them, so add a confirmation for actions that cannot be undone.
+
+## PostconditionCheck
+
+**Protects against.** An agent reporting success that the tools do not support (`false-success-claim`).
+
+**Wire it.** `PostconditionCheck([tool_succeeded("update_inventory")])`. Each condition looks at the conversation and returns a problem or None. If one fails, the final answer is replaced with a statement of what could not be confirmed, including the tool's error.
+
+**Trade-offs.** It replaces any final answer when a condition fails, even an honest one, so keep conditions narrow. It can only check what the conversation shows, so for important actions check the real system.
+
+## MemoryWriteFilter
+
+**Protects against.** Untrusted content saved to memory and later followed as an instruction (`memory-poisoning`).
+
+**Wire it.** `MemoryWriteFilter(write_tool="save_memory", untrusted_tools=["read_email"])`. Writes that match untrusted content are tagged with their origin, and if they also read as an instruction they are refused. Writes that do not match are tagged as the agent's own.
+
+**Trade-offs.** Matching is on the text, so a paraphrase is not recognised. The instruction test is a list of phrases. Tagging only helps if something uses the tag, for example by showing the source when memory is recalled.
