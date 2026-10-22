@@ -151,3 +151,33 @@ Each entry has the context, the decision, the alternatives I rejected, and the c
 **Alternatives rejected.** Checking after the call overspends by one call. Summarising old messages adds a second model and its own error cases.
 
 **Consequences.** A reply longer than the reserve can pass the ceiling slightly. The docs state it.
+
+## D-016: Parallel tool calls are a batch against a snapshot
+
+**Context.** The race needs two calls in one turn to overlap, and the agent runs tools one after another.
+
+**Decision.** `Agent(batch=...)` opens a batch around any turn with more than one tool call. `SharedStore` makes reads inside a batch see the data from when it began and applies writes together at the end, so a read-modify-write loses an update.
+
+**Alternatives rejected.** Real threads would make the failure depend on timing. A fake guard that simulates it would hide the mechanism in the wrong place.
+
+**Consequences.** The race is exact and repeatable. It models lost updates only, not every concurrency bug.
+
+## D-017: Some fixes need the model, or the tool, to cooperate
+
+**Context.** `ConflictSerializer` holds a call back and asks the model to repeat it. `StepJournal` needs a durable journal. `Deadline` cancels a call but cannot undo work on the other side.
+
+**Decision.** Ship them with their limits written next to them in the README and in `docs/guards.md`, and pair them with idempotency keys where an effect may have happened.
+
+**Alternatives rejected.** Hiding the limits would make the fixes look complete when they are not.
+
+**Consequences.** Users read the trade-offs before relying on a guard.
+
+## D-018: Detection by matching text is limited, and says so
+
+**Context.** `PostconditionCheck` and `MemoryWriteFilter` decide from the words in the conversation.
+
+**Decision.** Keep them simple and testable. The memory filter matches the saved text against untrusted output and a list of instruction phrases. A test documents that a paraphrase gets through.
+
+**Alternatives rejected.** A classifier would add a model, a dependency and its own errors.
+
+**Consequences.** They are a first line of defence. The READMEs say what they miss.
