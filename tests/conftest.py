@@ -4,7 +4,15 @@ from collections.abc import Callable, Sequence
 import pytest
 
 from agent_failure_lab.scenario import Outcome, ScenarioDefinition, Variant
-from agent_failure_lab.sim import ManualClock, Message, RunState, ToolSpec, Trace, Usage
+from agent_failure_lab.sim import (
+    LanguageModel,
+    ManualClock,
+    Message,
+    RunState,
+    ToolSpec,
+    Trace,
+    Usage,
+)
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
@@ -23,19 +31,30 @@ def make_scenario() -> Callable[..., ScenarioDefinition]:
         *,
         category: str = "side-effects",
         summary: str = "Retry charges twice",
+        fix: str = "Idempotency keys",
+        guards: tuple[str, ...] = ("IdempotencyKeys",),
         broken_fails: bool = True,
         fixed_fails: bool = False,
+        live: bool = False,
     ) -> ScenarioDefinition:
         def outcome(variant: Variant, failure_observed: bool) -> Outcome:
-            return Outcome(variant, failure_observed, Trace(ManualClock()))
+            metrics = {"charges": 2 if failure_observed else 1}
+            return Outcome(variant, failure_observed, Trace(ManualClock()), metrics)
+
+        def live_outcome(variant: Variant) -> Callable[[LanguageModel], Outcome]:
+            return lambda model: outcome(variant, variant is Variant.BROKEN)
 
         return ScenarioDefinition(
             slug=slug,
             title=slug.replace("-", " ").title(),
             category=category,
             summary=summary,
+            fix=fix,
+            guards=guards,
             broken=lambda: outcome(Variant.BROKEN, broken_fails),
             fixed=lambda: outcome(Variant.FIXED, fixed_fails),
+            broken_live=live_outcome(Variant.BROKEN) if live else None,
+            fixed_live=live_outcome(Variant.FIXED) if live else None,
         )
 
     return factory
