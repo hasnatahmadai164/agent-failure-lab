@@ -4,7 +4,7 @@ class AflabError(Exception):
 
 class UnknownScenarioError(AflabError):
     def __init__(self, slug: str) -> None:
-        super().__init__(f"No failure is registered under the slug '{slug}'")
+        super().__init__(f"No failure is registered under the slug '{slug}'. Run 'aflab list'.")
         self.slug = slug
 
 
@@ -24,6 +24,30 @@ class InvalidSlugError(AflabError):
 
 class ScenarioContractError(AflabError):
     """A scenario returned an outcome that does not match what was asked of it."""
+
+
+class LiveNotSupportedError(AflabError):
+    def __init__(self, slug: str) -> None:
+        super().__init__(
+            f"'{slug}' has no live variant, so it can only run with the scripted model"
+        )
+        self.slug = slug
+
+
+class LiveModeUnavailableError(AflabError):
+    """Live mode could not start, for example because a package or the API key is missing."""
+
+
+class LiveRequestError(AflabError):
+    """A request to the model provider failed during a live run."""
+
+
+class ScaffoldError(AflabError):
+    """A new failure could not be created."""
+
+
+class CatalogError(AflabError):
+    """The catalogue markers could not be found in a document."""
 
 
 class ToolError(AflabError):
