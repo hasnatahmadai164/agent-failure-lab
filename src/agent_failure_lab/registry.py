@@ -11,17 +11,25 @@ from agent_failure_lab.scenario import Scenario
 _SLUG_PATTERN = re.compile(r"[a-z][a-z0-9]*(-[a-z0-9]+)*")
 
 
+def validate_slug(slug: str) -> None:
+    if not _SLUG_PATTERN.fullmatch(slug):
+        raise InvalidSlugError(slug)
+
+
+def module_name(slug: str) -> str:
+    """The Python package name for a slug, since a hyphen cannot appear in an import."""
+    return slug.replace("-", "_")
+
+
 class ScenarioRegistry:
     def __init__(self) -> None:
         self._by_slug: dict[str, Scenario] = {}
 
     def register(self, scenario: Scenario) -> None:
-        slug = scenario.slug
-        if not _SLUG_PATTERN.fullmatch(slug):
-            raise InvalidSlugError(slug)
-        if slug in self._by_slug:
-            raise DuplicateScenarioError(slug)
-        self._by_slug[slug] = scenario
+        validate_slug(scenario.slug)
+        if scenario.slug in self._by_slug:
+            raise DuplicateScenarioError(scenario.slug)
+        self._by_slug[scenario.slug] = scenario
 
     def get(self, slug: str) -> Scenario:
         try:
