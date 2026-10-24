@@ -26,13 +26,13 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = [
-  "typer>=0.12,<2",
+  "typer>=0.16,<2",
   "rich>=13.7,<15",
 ]
 
 [project.optional-dependencies]
 live = ["openai>=1.40,<3"]
-langgraph = ["langgraph>=0.2,<2"]
+langgraph = ["langgraph>=0.2.60,<2"]
 dev = [
   "pytest>=8,<10",
   "ruff>=0.6,<1",
@@ -61,9 +61,14 @@ include = [
   "src",
   "tests",
   "docs",
+  "examples",
+  "scripts",
   "README.md",
   "LICENSE",
   "CHANGELOG.md",
+  "CONTRIBUTING.md",
+  "CODE_OF_CONDUCT.md",
+  "SECURITY.md",
 ]
 
 [tool.ruff]
@@ -74,6 +79,10 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["B", "C4", "E", "F", "I", "N", "PT", "RUF", "SIM", "T20", "UP", "W"]
 
+[tool.ruff.lint.per-file-ignores]
+"examples/**" = ["T20"]
+"scripts/**" = ["T20"]
+
 [tool.mypy]
 strict = true
 python_version = "3.10"
@@ -81,6 +90,7 @@ files = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["tests"]
 addopts = "-ra --strict-markers --import-mode=importlib"
 markers = [
   "live: needs network access and OPENAI_API_KEY, runs only when RUN_LIVE=1",
