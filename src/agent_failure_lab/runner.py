@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from agent_failure_lab.errors import ScenarioContractError
 from agent_failure_lab.registry import ScenarioRegistry
 from agent_failure_lab.scenario import Outcome, Scenario, Variant
+from agent_failure_lab.sim import LanguageModel
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,14 +26,21 @@ class PairResult:
         return self.broken_reproduced and not self.fixed_still_fails
 
 
-def run_scenario(scenario: Scenario, variant: Variant) -> Outcome:
-    outcome = scenario.run(variant)
+def _check_variant(scenario: Scenario, variant: Variant, outcome: Outcome) -> Outcome:
     if outcome.variant is not variant:
         raise ScenarioContractError(
             f"'{scenario.slug}' was asked for the {variant.value} variant "
             f"but returned a {outcome.variant.value} outcome"
         )
     return outcome
+
+
+def run_scenario(scenario: Scenario, variant: Variant) -> Outcome:
+    return _check_variant(scenario, variant, scenario.run(variant))
+
+
+def run_scenario_live(scenario: Scenario, variant: Variant, model: LanguageModel) -> Outcome:
+    return _check_variant(scenario, variant, scenario.run_live(variant, model))
 
 
 def run_pair(scenario: Scenario) -> PairResult:
