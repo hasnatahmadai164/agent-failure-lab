@@ -8,6 +8,7 @@ from agent_failure_lab.sim import (
     Agent,
     EventKind,
     Guard,
+    LanguageModel,
     ManualClock,
     Message,
     Reply,
@@ -80,11 +81,13 @@ def _update(speed: str) -> ToolCall:
     return ToolCall(UPDATE, {"order_id": ORDER_ID, "speed": speed})
 
 
-def play(variant: Variant, *, guards: Sequence[Guard] = ()) -> Outcome:
+def play(
+    variant: Variant, *, guards: Sequence[Guard] = (), model: LanguageModel | None = None
+) -> Outcome:
     database = OrderDatabase()
     tool = shipping_tool(database)
     agent = Agent(
-        ScriptedLLM([shipping_agent], repeat_last=True),
+        model if model is not None else ScriptedLLM([shipping_agent], repeat_last=True),
         ToolRegistry([tool]),
         clock=ManualClock(),
         guards=guards,

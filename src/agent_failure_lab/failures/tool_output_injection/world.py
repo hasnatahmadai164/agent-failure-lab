@@ -7,6 +7,7 @@ from agent_failure_lab.sim import (
     Agent,
     EventKind,
     Guard,
+    LanguageModel,
     ManualClock,
     Message,
     Reply,
@@ -107,10 +108,12 @@ def _summary_mail(to: str, body: str) -> ToolCall:
     return ToolCall("send_email", {"to": to, "subject": "Refund policy", "body": body})
 
 
-def play(variant: Variant, *, guards: Sequence[Guard] = ()) -> Outcome:
+def play(
+    variant: Variant, *, guards: Sequence[Guard] = (), model: LanguageModel | None = None
+) -> Outcome:
     outbox = Outbox()
     agent = Agent(
-        ScriptedLLM([hijackable_agent], repeat_last=True),
+        model if model is not None else ScriptedLLM([hijackable_agent], repeat_last=True),
         ToolRegistry([fetch_tool(), email_tool(outbox)]),
         clock=ManualClock(),
         guards=guards,

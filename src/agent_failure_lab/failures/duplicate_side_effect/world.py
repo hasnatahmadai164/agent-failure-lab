@@ -7,6 +7,7 @@ from agent_failure_lab.sim import (
     Agent,
     Fail,
     Guard,
+    LanguageModel,
     ManualClock,
     Message,
     Reply,
@@ -77,11 +78,12 @@ def play(
     *,
     guards: Sequence[Guard] = (),
     store: IdempotencyStore | None = None,
+    model: LanguageModel | None = None,
 ) -> Outcome:
     provider = PaymentProvider()
     tool = charge_tool(provider, store)
     agent = Agent(
-        ScriptedLLM([billing_agent], repeat_last=True),
+        model if model is not None else ScriptedLLM([billing_agent], repeat_last=True),
         ToolRegistry([tool]),
         clock=ManualClock(),
         guards=guards,

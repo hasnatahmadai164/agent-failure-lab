@@ -7,6 +7,7 @@ from agent_failure_lab.sim import (
     Agent,
     EventKind,
     Guard,
+    LanguageModel,
     ManualClock,
     Message,
     Reply,
@@ -70,10 +71,12 @@ def triage_agent(messages: Sequence[Message]) -> Reply:
     return Reply(f"Both tags are on {TICKET}.")
 
 
-def play(variant: Variant, *, guards: Sequence[Guard] = ()) -> Outcome:
+def play(
+    variant: Variant, *, guards: Sequence[Guard] = (), model: LanguageModel | None = None
+) -> Outcome:
     store = SharedStore({TICKET: []})
     agent = Agent(
-        ScriptedLLM([triage_agent], repeat_last=True),
+        model if model is not None else ScriptedLLM([triage_agent], repeat_last=True),
         ToolRegistry([tag_tool(store)]),
         clock=ManualClock(),
         guards=guards,
