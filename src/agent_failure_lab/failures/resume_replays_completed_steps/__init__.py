@@ -6,6 +6,8 @@ SCENARIO = ScenarioDefinition(
     title="Resume replays completed steps",
     category="side-effects",
     summary="After a crash, the restarted agent repeats work that already finished",
+    fix="A step journal for safe resume",
+    guards=("StepJournal", "Journal"),
     broken=broken.run,
     fixed=fixed.run,
 )

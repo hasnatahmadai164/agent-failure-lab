@@ -6,6 +6,8 @@ SCENARIO = ScenarioDefinition(
     title="False success claim",
     category="tool-use",
     summary="The agent reports success after a tool returned an error",
+    fix="Postcondition checks before an answer is accepted",
+    guards=("PostconditionCheck",),
     broken=broken.run,
     fixed=fixed.run,
 )

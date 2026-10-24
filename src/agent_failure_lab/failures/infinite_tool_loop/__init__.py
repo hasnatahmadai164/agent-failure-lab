@@ -6,6 +6,8 @@ SCENARIO = ScenarioDefinition(
     title="Infinite tool loop",
     category="control-flow",
     summary="The model repeats the same call without progress and burns tokens",
+    fix="Loop detection and a step budget",
+    guards=("LoopDetector", "StepBudget"),
     broken=broken.run,
     fixed=fixed.run,
 )

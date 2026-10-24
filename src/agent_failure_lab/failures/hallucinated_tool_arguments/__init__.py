@@ -6,6 +6,10 @@ SCENARIO = ScenarioDefinition(
     title="Hallucinated tool arguments",
     category="tool-use",
     summary="The model invents an enum value and the tool stores it",
+    fix="Schema validation with bounded repair",
+    guards=("ArgumentValidator",),
     broken=broken.run,
     fixed=fixed.run,
+    broken_live=broken.run,
+    fixed_live=fixed.run,
 )

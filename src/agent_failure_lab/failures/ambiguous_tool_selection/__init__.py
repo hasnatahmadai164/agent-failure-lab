@@ -6,6 +6,8 @@ SCENARIO = ScenarioDefinition(
     title="Ambiguous tool selection",
     category="tool-use",
     summary="Two tools with overlapping descriptions get confused",
+    fix="Description linting and clearer descriptions",
+    guards=("ToolDescriptionLinter",),
     broken=broken.run,
     fixed=fixed.run,
 )

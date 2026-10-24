@@ -6,6 +6,10 @@ SCENARIO = ScenarioDefinition(
     title="Duplicate side effect on retry",
     category="side-effects",
     summary="A retried tool call charges the customer twice",
+    fix="Idempotency keys",
+    guards=("IdempotencyKeys", "IdempotencyStore"),
     broken=broken.run,
     fixed=fixed.run,
+    broken_live=broken.run,
+    fixed_live=fixed.run,
 )

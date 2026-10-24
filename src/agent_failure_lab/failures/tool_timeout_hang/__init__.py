@@ -6,6 +6,8 @@ SCENARIO = ScenarioDefinition(
     title="Tool timeout hang",
     category="control-flow",
     summary="A tool never returns and the whole run stalls waiting for it",
+    fix="Deadlines with cancellation and partial results",
+    guards=("Deadline",),
     broken=broken.run,
     fixed=fixed.run,
 )

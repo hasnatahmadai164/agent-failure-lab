@@ -6,6 +6,10 @@ SCENARIO = ScenarioDefinition(
     title="Instructions hidden in tool output",
     category="security",
     summary="Instructions hidden in a tool result hijack the next action",
+    fix="Quarantine untrusted output and gate sensitive tools",
+    guards=("ToolOutputQuarantine", "CapabilityGate"),
     broken=broken.run,
     fixed=fixed.run,
+    broken_live=broken.run,
+    fixed_live=fixed.run,
 )

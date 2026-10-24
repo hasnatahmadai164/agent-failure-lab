@@ -6,6 +6,8 @@ SCENARIO = ScenarioDefinition(
     title="Runaway cost",
     category="context-and-cost",
     summary="With no spending ceiling, a run keeps paying for more steps",
+    fix="A cost and token ceiling with a hard stop",
+    guards=("CostBudget",),
     broken=broken.run,
     fixed=fixed.run,
 )

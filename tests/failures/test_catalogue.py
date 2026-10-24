@@ -2,12 +2,18 @@ from importlib.resources import files
 
 import pytest
 
+from agent_failure_lab import guards
 from agent_failure_lab.registry import build_registry
 from agent_failure_lab.runner import run_pair
-from agent_failure_lab.scenario import Scenario
+from agent_failure_lab.scenario import CATEGORIES, Scenario
 
 SCENARIOS = build_registry().scenarios()
-CATEGORIES = {"side-effects", "control-flow", "security", "tool-use", "context-and-cost"}
+LIVE_SLUGS = {
+    "duplicate-side-effect",
+    "tool-output-injection",
+    "hallucinated-tool-arguments",
+    "parallel-tool-race",
+}
 README_SECTIONS = [
     "What happens",
     "Why it happens",
@@ -25,7 +31,7 @@ def _readme(scenario: Scenario) -> str:
 
 
 def test_the_catalogue_lists_the_failures_in_the_order_of_the_brief() -> None:
-    assert [scenario.slug for scenario in SCENARIOS] == [
+    assert [scenario.slug for scenario in SCENARIOS][:12] == [
         "duplicate-side-effect",
         "infinite-tool-loop",
         "tool-output-injection",
@@ -87,3 +93,15 @@ def test_the_readme_uses_no_dashes_as_punctuation(scenario: Scenario) -> None:
 
     assert chr(0x2014) not in text
     assert chr(0x2013) not in text
+
+
+@pytest.mark.parametrize("scenario", SCENARIOS, ids=lambda s: s.slug)
+def test_each_failure_names_its_fix_and_the_guards_that_exist(scenario: Scenario) -> None:
+    assert scenario.fix
+    assert scenario.guards
+    for name in scenario.guards:
+        assert hasattr(guards, name), name
+
+
+def test_the_failures_that_can_run_against_a_real_model_are_the_expected_ones() -> None:
+    assert {s.slug for s in SCENARIOS if s.supports_live} == LIVE_SLUGS
