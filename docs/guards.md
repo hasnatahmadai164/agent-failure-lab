@@ -20,6 +20,7 @@ Notes that apply to every guard:
 - Guards keep state for one run. Create fresh instances for each run.
 - Every guard that changes behaviour records it in the trace through `run.intervene(...)`.
 - A guard does not make an agent safe. It closes one specific gap, and each entry below says which.
+- To use a guard in a framework other than this library's loop, see [porting.md](porting.md).
 
 ## IdempotencyKeys and IdempotencyStore
 
