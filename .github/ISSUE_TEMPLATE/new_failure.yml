@@ -1,0 +1,60 @@
+name: New failure
+description: Suggest an agent failure that belongs in the catalogue
+labels: [new-failure]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please check `docs/ideas.md` and the existing issues first. Read `docs/writing-a-failure.md` for what makes a good candidate.
+  - type: input
+    id: name
+    attributes:
+      label: Name
+      description: A short slug, lowercase words joined by hyphens.
+      placeholder: stale-retrieval
+    validations:
+      required: true
+  - type: textarea
+    id: what-happens
+    attributes:
+      label: What happens
+      description: In plain words, what does the agent do and what goes wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: seen
+    attributes:
+      label: Where it has been seen
+      description: Your own experience, or a link to an account of it. Say if you are not sure.
+    validations:
+      required: true
+  - type: textarea
+    id: measure
+    attributes:
+      label: How it could be measured
+      description: What could a fake world count that would show the failure, such as charges, messages or tokens?
+    validations:
+      required: true
+  - type: textarea
+    id: fix
+    attributes:
+      label: The fix
+      description: What would you put in an agent to prevent it, and what would that miss?
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - side-effects
+        - control-flow
+        - security
+        - tool-use
+        - context-and-cost
+    validations:
+      required: true
+  - type: checkboxes
+    id: willing
+    attributes:
+      label: Contribution
+      options:
+        - label: I would like to write this one myself.
