@@ -6,7 +6,7 @@ Each entry has the context, the decision, the alternatives I rejected, and the c
 
 **Context.** My working rules were written for web services (pydantic-settings, structlog, FastAPI, async). This project is a small CLI library with its own stack.
 
-**Decision.** Follow the project brief: Python 3.10 or newer, dataclasses and Protocols, standard library plus typer and rich. No settings class, no structlog, no async. The only environment variable is `OPENAI_API_KEY`, read in one place when live mode is added.
+**Decision.** Follow the project brief: Python 3.10 or newer, dataclasses and Protocols, standard library plus typer and rich. No settings class, no structlog, no async. The only environment variable is `OPENAI_API_KEY`, read in one place (`live.py`).
 
 **Alternatives rejected.** Adding pydantic-settings and structlog to match the generic rules. Nothing in the core needs them.
 
@@ -16,7 +16,7 @@ Each entry has the context, the decision, the alternatives I rejected, and the c
 
 **Context.** I need a `src/` layout, extras, a console script, and one place for the version.
 
-**Decision.** Use hatchling. The version lives in `__version__` in `src/agent_failure_lab/__init__.py` and hatchling reads it from there. It starts at `0.1.0.dev0`.
+**Decision.** Use hatchling. The version lives in `__version__` in `src/agent_failure_lab/__init__.py` and hatchling reads it from there. 
 
 **Alternatives rejected.** setuptools-scm ties the version to git tags and history during builds. Poetry is heavy for two dependencies. A version in two files drifts.
 
@@ -26,11 +26,11 @@ Each entry has the context, the decision, the alternatives I rejected, and the c
 
 **Context.** The core should install small and rarely clash with other packages.
 
-**Decision.** Runtime dependencies are typer and rich only. OpenAI is the `live` extra, LangGraph is the `langgraph` extra, and the development tools are the `dev` extra. Each range has a lower bound and the next major version as the upper bound. The `dev` extra needs twine 7 or newer: twine 6.2 rejected the metadata hatchling writes, and I found that by running the build check.
+**Decision.** Runtime dependencies are typer and rich only. OpenAI is the `live` extra, LangGraph is the `langgraph` extra, and the development tools are the `dev` extra. Each range has a lower bound and the next major version as the upper bound. The `dev` extra needs twine 7 or newer: twine 6.2 rejected the metadata hatchling writes, and I found that by running the build check. typer has to be 0.16 or newer: I ran the test suite against older releases, and 0.12.3 and earlier fail on `str | None` annotations, while 0.12.4 to 0.15.x break with click 8.2 and newer.
 
 **Alternatives rejected.** Exact pins clash with other packages. No upper bounds means a future major release could break the CLI. argparse avoids a dependency but I would write the help text and tables by hand.
 
-**Consequences.** I have not tested the lower bounds. They need checking before the first release.
+**Consequences.** The suite passes with typer 0.16.0 and rich 13.7.0 on Python 3.10, and with the newest releases on 3.10 to 3.13. The LangGraph example passes with langgraph 0.2.60 and with 1.2.16. The openai lower bound and the dev tools' lower bounds are not tested.
 
 ## D-004: The CLI is built by a function that takes the registry
 
@@ -46,11 +46,11 @@ Each entry has the context, the decision, the alternatives I rejected, and the c
 
 **Context.** The brief wants ruff, mypy, pytest on Python 3.10 to 3.13, `aflab run --all --fail-on-unfixed`, and a build check. I develop on Windows.
 
-**Decision.** Three jobs: lint (ruff check, ruff format check, mypy), test (3.10 to 3.13 on Ubuntu, plus 3.12 on Windows), and build (`python -m build`, `twine check`). The `aflab run --all` step is added in Stage 7, when the command exists.
+**Decision.** Four jobs: lint (ruff check, ruff format check, mypy, the catalogue check), test (3.10 to 3.13 on Ubuntu, plus 3.12 on Windows, then `aflab run --all --fail-on-unfixed`), examples (installs the langgraph extra and runs the examples test), and build (`python -m build`, `twine check`).
 
 **Alternatives rejected.** One job that does everything is slower and the failures are harder to read. A full OS matrix costs more minutes for little extra signal.
 
-**Consequences.** A lint failure does not hide a test failure. `ci.yml` gets edited once more in Stage 7.
+**Consequences.** A lint failure does not hide a test failure, and the LangGraph install cannot break the main test matrix.
 
 ## D-006: Guards are objects with five hooks that return decisions
 
@@ -80,7 +80,7 @@ Each entry has the context, the decision, the alternatives I rejected, and the c
 
 **Alternatives rejected.** A real tokenizer adds a dependency and its numbers change between versions. Random failure injection is not reproducible.
 
-**Consequences.** Token and cost figures are consistent but not real costs, and the README says so. Model calls take no simulated time. Tools run one after another, so the parallel-race failure needs a small addition in Stage 5.
+**Consequences.** Token and cost figures are consistent but not real costs, and the README says so. Model calls take no simulated time. Tools run one after another unless a turn is run as a batch (D-016).
 
 ## D-009: An injectable clock, and the trace uses it
 
@@ -94,13 +94,13 @@ Each entry has the context, the decision, the alternatives I rejected, and the c
 
 ## D-010: Scenarios, the runner, and two changes from the brief
 
-**Context.** The brief asks for a Scenario protocol and a registry. It also says each failure's `__init__.py` registers it, and that failure folders are named after the slug. In Stage 1, a placeholder `ScenarioInfo` let `aflab list` work before the real model existed.
+**Context.** The brief asks for a Scenario protocol and a registry. It also says each failure's `__init__.py` registers it, and that failure folders are named after the slug.
 
 **Decision.** `Scenario` is a Protocol and `ScenarioDefinition` is the normal implementation, with one function per variant. `Outcome` holds the variant, `failure_observed`, the trace, metrics and findings. The runner returns a `PairResult`, and its `contract_holds` means the broken variant fails and the fixed one does not. Slugs must be lowercase words joined by single hyphens. Two changes from the brief. Folders and test files use the slug with underscores, because a hyphenated folder cannot be imported. Failure packages do not register themselves on import. They expose a scenario, and `builtin_scenarios()` lists them. I also added `scenario.py` and `sim/hooks.py`, which the layout in the brief did not list.
 
 **Alternatives rejected.** Registering on import breaks the no side effects rule and makes test order matter. Loading folders by name with importlib hides what the catalogue contains.
 
-**Consequences.** Adding a failure means writing its package and adding one line to `builtin_scenarios()`. `aflab new` will do both. `ScenarioInfo` is gone.
+**Consequences.** Adding a failure means writing its package and adding one line to `builtin_scenarios()`. `aflab new` does both: it writes the package and edits `failures/__init__.py` itself, and prints what to do by hand if the file has an unexpected shape.
 
 ## D-011: A fix that needs the other side ships both halves
 
@@ -181,3 +181,53 @@ Each entry has the context, the decision, the alternatives I rejected, and the c
 **Alternatives rejected.** A classifier would add a model, a dependency and its own errors.
 
 **Consequences.** They are a first line of defence. The READMEs say what they miss.
+
+## D-019: The CLI has three output formats and two exit codes
+
+**Context.** The same results are read by people in a terminal, pasted into issues, and checked by CI.
+
+**Decision.** `run` and `compare` print text by default, with `--format json` and `--format md` for the other two. `report` writes Markdown or JSON, to the terminal or a file. Exit status 0 means the command worked. Status 2 means the command was wrong (an unknown slug, options that do not go together, live mode not set up) and prints one line starting with `error:`. Status 1 is used only by `--fail-on-unfixed`, when a fixed variant still shows its failure. A broken variant that does not fail is a different problem and is not reported through status.
+
+**Alternatives rejected.** Using status 1 for every error would make CI unable to tell a bad command from a bad fix.
+
+**Consequences.** The three formats come from the same data (`report.py`), so they cannot disagree. JSON never contains a trace unless `--trace` is given.
+
+## D-020: Every console turns Rich markup off
+
+**Context.** Rich reads square brackets as styling. A tool result such as `[end of untrusted content]` was silently deleted from the output, which is the opposite of what a reproduction should do.
+
+**Decision.** Every console is created with `markup=False` and `highlight=False`. Colour comes from styles passed in code, never from text.
+
+**Alternatives rejected.** Escaping brackets by hand would be forgotten the next time a string is printed.
+
+**Consequences.** Tool output is printed exactly as it was. A test prints a bracketed string to prove it.
+
+## D-021: Live mode is a thin adapter around an injected client
+
+**Context.** Four failures are judged by what happened in the fake world, so they can run against a real model. The default test run must not touch the network or need a key.
+
+**Decision.** `OpenAIChatModel` takes a client as an argument, and only `create_client` imports `openai`, lazily, with the import function injectable. `openai` is an optional extra and not a dev dependency, so type checking sees the client as `Any`. A missing package or key is reported as a one line error. Request failures are wrapped in `LiveRequestError`. Live runs are labelled non-deterministic and make no claim that the fix worked. Malformed tool arguments are kept as `{"_invalid_arguments": raw}` so a validator can reject them visibly.
+
+**Alternatives rejected.** Importing `openai` at the top of the module would make the core need it. Mocking `openai` with a patch hides the interface being used.
+
+**Consequences.** Tests use a fake client shaped like the real responses. The adapter has not been run against the real API, and no document says it has.
+
+## D-022: Rendering, reporting and the catalogue are separate modules
+
+**Context.** The same results are printed, serialised and written into documentation.
+
+**Decision.** `report.py` turns results into plain data, JSON and Markdown. `render.py` only draws with Rich. `catalog.py` builds the table and splices it between markers, and `scripts/generate_catalog.py` writes it, with `--check` for CI. The README table uses absolute links so that it also works on PyPI. Tests compare the committed README and `docs/catalog.md` with what the registry generates, and scan the documentation for dashes, banned words and broken links.
+
+**Alternatives rejected.** Writing the table by hand drifts the first time a failure is added.
+
+**Consequences.** Adding a failure means running one script. A documentation rule that is only written down gets broken, so the rules are tests.
+
+## D-023: Releases go out through PyPI trusted publishing
+
+**Context.** A long-lived PyPI token in repository secrets is a thing to leak and rotate.
+
+**Decision.** Pushing a tag `v*` runs the release workflow. It builds, runs `twine check`, fails if the tag differs from `__version__`, and publishes with `pypa/gh-action-pypi-publish` using an OpenID Connect token from a `pypi` environment. No secret is stored.
+
+**Alternatives rejected.** An API token in secrets works but must be created, scoped and rotated by hand.
+
+**Consequences.** The publisher has to be registered on PyPI once, before the first tag. The `pypi` environment can require approval before anything is published.
