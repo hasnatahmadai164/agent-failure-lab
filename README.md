@@ -13,6 +13,26 @@ aflab run duplicate-side-effect
 ```
 
 <!-- terminal-output:start -->
+```text
+$ aflab run duplicate-side-effect
+duplicate-side-effect  (side-effects)
+A retried tool call charges the customer twice
+Scripted model, no network. The result is the same on every run.
+
+Broken variant: FAILURE OBSERVED
+  charges         2
+  tool_calls      2
+  replayed_calls  0
+  Order A-1001 was charged 2 times (98.00 EUR in total).
+
+Fixed variant: no failure
+  charges         1
+  tool_calls      2
+  replayed_calls  1
+  The retry reused the stored result, so the card was charged once.
+
+The broken variant fails and the fixed variant does not.
+```
 <!-- terminal-output:end -->
 
 ## The catalogue
