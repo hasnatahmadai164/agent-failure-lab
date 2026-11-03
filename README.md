@@ -122,7 +122,12 @@ A live run is labelled as such, calls the API and costs money, and its result is
 
 ## Adding a failure
 
+Clone the repository first, because the command writes into the source tree:
+
 ```bash
+git clone https://github.com/hasnatahmadai164/agent-failure-lab.git
+cd agent-failure-lab
+python -m pip install -e .
 aflab new my-new-failure --category tool-use
 ```
 
