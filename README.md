@@ -142,7 +142,7 @@ The scenarios use a scripted model that misbehaves on purpose. They show a failu
 - It is not a hosted service.
 - No guard makes an agent safe. Each closes one specific gap, and each write-up says what it leaves open. The prompt injection quarantine, for example, only labels untrusted text. The capability gate is the control you can rely on.
 - Token and cost figures use a rough estimate of four characters per token and illustrative prices. They show proportions, not real bills.
-- It has been tested on Linux. The CI runs the tests on Windows as well, but the author has not used the tool on Windows by hand.
+- It has been tested on Linux and run by hand on Windows. The CI runs the tests on both.
 
 ## Roadmap
 
