@@ -118,7 +118,7 @@ export OPENAI_API_KEY=...        # on Windows PowerShell: $env:OPENAI_API_KEY = 
 aflab run duplicate-side-effect --live --model gpt-4o-mini
 ```
 
-A live run is labelled as such, calls the API and costs money, and its result is not deterministic. The output says what happened and does not claim that the fix works or fails for that model. Live mode has not been checked against the real OpenAI API by the author, so treat it as unverified until you have run it yourself. The tests exercise it against a fake client only.
+Live mode was run against the OpenAI API with gpt-4o-mini on November 2026 for all four failures. Results vary between runs and between models.
 
 ## Adding a failure
 
